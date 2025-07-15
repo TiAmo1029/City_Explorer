@@ -48,9 +48,11 @@ async function setupMapAndLayers() {
     console.log("地图加载，开始设置图层...");
     try {
         // 1. 加载省份数据 (客户端加载)
-        const provinceWfsUrl = 'http://localhost:8080/geoserver/my_gis_project/ows?service=WFS&version=1.0.0&request=GetFeature&typeName=my_gis_project%3Agadm41_chn_1_1&outputFormat=application%2Fjson';
-        const provinceResponse = await fetch(provinceWfsUrl);
-        const provinceGeoJsonData = await provinceResponse.json();
+        const provinceJsonUrl = `${process.env.BASE_URL}provinces.json`;
+        console.log("正在从以下URL加载省份数据:", provinceJsonUrl);
+
+        const response = await fetch(provinceJsonUrl); // 可以直接用原生的fetch
+        const provinceGeoJsonData = await response.json();
 
         const initialProvinces = provinceGeoJsonData.features.map((feature, index) => ({
             id: feature.properties.name_1 || `province-${index}`,
