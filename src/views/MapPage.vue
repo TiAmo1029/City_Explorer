@@ -48,15 +48,15 @@ async function setupMapAndLayers() {
     console.log("地图加载，开始设置图层...");
     try {
         // 1. 加载省份数据 (客户端加载)
-        const provinceJsonUrl = `${process.env.BASE_URL}provinces.json`;
+        const provinceJsonUrl = `${process.env.BASE_URL}provinces_of_china.json`;
         console.log("正在从以下URL加载省份数据:", provinceJsonUrl);
 
         const response = await fetch(provinceJsonUrl); // 可以直接用原生的fetch
         const provinceGeoJsonData = await response.json();
 
         const initialProvinces = provinceGeoJsonData.features.map((feature, index) => ({
-            id: feature.properties.name_1 || `province-${index}`,
-            name: feature.properties.name_1,
+            id: feature.properties.name || `province-${index}`,
+            name: feature.properties.name,
             type: '面',
             visible: true,
             feature: feature
@@ -68,7 +68,7 @@ async function setupMapAndLayers() {
             map.addSource('provinces-source', {
                 type: 'geojson',
                 data: provinceGeoJsonData,
-                promoteId: 'name_1'
+                promoteId: 'name'
             });
         }
         if (!map.getLayer('provinces-layer')) {
@@ -118,7 +118,7 @@ function setupInteractions() {
     let hoveredId = null;
     map.on('click', 'provinces-layer', (e) => {
         if (e.features.length > 0) {
-            layerStore.setSelectedFeatureId(e.features[0].properties.name_1);
+            layerStore.setSelectedFeatureId(e.features[0].properties.name);
         }
     });
     map.on('click', (e) => {
@@ -129,7 +129,7 @@ function setupInteractions() {
     map.on('mousemove', 'provinces-layer', (e) => {
         if (e.features.length > 0) {
             if (hoveredId !== null) map.setFeatureState({ source: 'provinces-source', id: hoveredId }, { hover: false });
-            hoveredId = e.features[0].properties.name_1;
+            hoveredId = e.features[0].properties.name;
             map.setFeatureState({ source: 'provinces-source', id: hoveredId }, { hover: true });
         }
     });
@@ -160,7 +160,7 @@ function setupWatchers() {
             const visibleProvinceNames = newProvinces
                 .filter(p => p.visible)
                 .map(p => p.name);
-            map.setFilter('provinces-layer', ['in', 'name_1', ...visibleProvinceNames]);
+            map.setFilter('provinces-layer', ['in', 'name', ...visibleProvinceNames]);
         }
     }, { deep: true });
 
