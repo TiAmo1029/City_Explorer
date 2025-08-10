@@ -5,6 +5,7 @@
       <nav class="main-nav">
         <router-link to="/">首页</router-link>
         <router-link to="/map">地图页</router-link>
+        <router-link to="/map3D">3D地图页</router-link>
         <router-link to="/about">关于项目</router-link>
       </nav>
     </header>

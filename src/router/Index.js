@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import HomePage from '../views/HomePage.vue';
 import MapPage from '../views/MapPage.vue';
 import AboutPage from '../views/AboutPage.vue';
+import Map3DPage from '../views/Map3DPage.vue';
 
 // 2. 定义路由表 (routes) - 这是一个规则数组
 const routes = [
@@ -17,6 +18,11 @@ const routes = [
         path: '/map',
         name: 'Map',
         component: MapPage
+    },
+    {
+        path: '/map3D',
+        name: 'Map3D',
+        component: Map3DPage
     },
     // 规则三：当URL路径是'/about'时
     {

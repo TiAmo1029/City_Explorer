@@ -7,12 +7,14 @@
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "deploy:vercel": "git push origin main"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",
     "@turf/turf": "^7.2.0",
     "axios": "^1.10.0",
+    "cesium": "^1.132.0",
     "core-js": "^3.8.3",
     "echarts": "^5.6.0",
     "element-plus": "^2.10.4",
@@ -27,6 +29,7 @@
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-service": "~5.0.0",
+    "copy-webpack-plugin": "^13.0.0",
     "eslint": "^7.32.0",
     "eslint-plugin-vue": "^8.0.3",
     "gh-pages": "^6.3.0"

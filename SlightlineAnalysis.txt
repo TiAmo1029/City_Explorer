@@ -1,0 +1,237 @@
+<template>
+  <!-- 1. 分析工具的UI，现在放在它自己的组件里 -->
+  <div class="analysis-tools">
+    <el-button @click="toggleLineOfSight" :type="isLosActive ? 'success' : 'primary'" size="small">
+      {{ isLosActive ? '通视分析中...' : '通视分析' }}
+    </el-button>
+  </div>
+</template>
+
+<script setup>
+import { inject, onUnmounted, ref, watch } from 'vue';
+import * as Cesium from 'cesium';
+import { viewerKey } from './Map3DLayout.vue';
+
+// --- 1. 注入viewer实例 ---
+const { viewer, viewerReady } = inject(viewerKey);
+
+// --- 2. 将所有分析相关的状态和逻辑，都封装在这个组件内部 ---
+const isLosActive = ref(false);
+let losHandler = null;
+const losEntities = [];
+let losStartPoint = null;
+
+// --- 3. 监听viewer是否就绪，就绪后才初始化交互 ---
+watch(viewerReady, (isReady) => {
+  if (isReady && viewer) {
+    // 初始化一个总的事件处理器
+    losHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    setupInteractions();
+  }
+}, { immediate: true });
+
+// --- 3. 激活/关闭分析模式的函数 ---
+function toggleLineOfSight() {
+    isLosActive.value = !isLosActive.value;
+
+    if (isLosActive.value) {
+        console.log("视线分析模式已激活。请在地球上点击选择起点。");
+        // (交互逻辑由setupInteractions处理)
+    } else {
+        console.log("视线分析模式已关闭。");
+        clearLosAnalysis();
+    }
+}
+
+// --- 4. 清除分析结果的函数 ---
+function clearLosAnalysis() {
+    losEntities.forEach(entity => viewer.entities.remove(entity));
+    losEntities.length = 0;
+    losStartPoint = null;
+}
+
+// --- 5. 执行分析的核心函数 ---
+function performLineOfSightAnalysis(endPoint) {
+    if (!losStartPoint || !endPoint) return;
+
+    const direction = Cesium.Cartesian3.normalize(
+        Cesium.Cartesian3.subtract(endPoint, losStartPoint, new Cesium.Cartesian3()),
+        new Cesium.Cartesian3()
+    );
+    const ray = new Cesium.Ray(losStartPoint, direction);
+
+    // 使用 scene.pickFromRay，它可以返回被遮挡物的信息
+    const intersection = viewer.scene.pickFromRay(ray, []);
+
+    const distanceToTarget = Cesium.Cartesian3.distance(losStartPoint, endPoint);
+    let color = Cesium.Color.GREEN;
+
+    // 检查是否有交点，并且交点距离小于目标点距离
+    if (Cesium.defined(intersection) && Cesium.Cartesian3.distance(losStartPoint, intersection.position) < distanceToTarget) {
+        color = Cesium.Color.RED;
+        // (可选) 在遮挡点创建一个标记
+        const obstructionMarker = viewer.entities.add({
+            position: intersection.position,
+            point: { color: Cesium.Color.YELLOW, pixelSize: 8, outlineWidth: 2, outlineColor: Cesium.Color.BLACK }
+        });
+        losEntities.push(obstructionMarker);
+    }
+
+    const line = viewer.entities.add({
+        polyline: { positions: [losStartPoint, endPoint], width: 3, material: color, clampToGround: false }
+    });
+    losEntities.push(line);
+}
+
+// --- 6. 统一的交互处理函数 ---
+function setupInteractions() {
+    if (!viewer) return;
+    losHandler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+    losHandler.setInputAction((clickEvent) => {
+        // a. 如果当前正处于视线分析模式
+        if (isLosActive.value) {
+            handleLosClick(clickEvent);
+        } else {
+            handleFeaturePick(clickEvent)
+        }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+}
+
+// 新的、专门处理视线分析点击的函数
+function handleLosClick(clickEvent) {
+    const cartesian = viewer.scene.pickPosition(clickEvent.position);
+    if (!Cesium.defined(cartesian)) return;
+
+    if (!losStartPoint) {
+        // 设置起点
+        clearLosAnalysis();
+        losStartPoint = cartesian;
+        const startMarker = viewer.entities.add({
+            // a. 位置：就是我们刚刚点击拾取到的那个三维空间坐标
+            position: cartesian,
+
+            // b. 名字和描述 (可选，但推荐，方便调试)
+            name: '视线分析起点',
+            description: '这是视线分析的起点。',
+
+            // c. (核心) 外观：定义它应该被画成一个“点”
+            point: {
+                // i. 颜色：我们使用Cesium预设的颜色常量
+                color: Cesium.Color.LIME,
+
+                // ii. 大小（像素）
+                pixelSize: 10,
+
+                // iii. (可选) 添加一个白色的轮廓，让点更清晰
+                outlineColor: Cesium.Color.WHITE,
+                outlineWidth: 2
+            }
+        });
+        losEntities.push(startMarker);
+    } else {
+        // 设置终点并执行分析
+        const endPoint = cartesian;
+        const endMarker = viewer.entities.add({
+            // a. 位置：就是第二次点击拾取到的坐标
+            position: cartesian, // 或者 endPoint 变量
+
+            // b. 名字和描述
+            name: '视线分析终点',
+            description: '这是视线分析的终点。',
+
+            // c. 外观：定义它是一个点
+            point: {
+                // i. 颜色：换成红色
+                color: Cesium.Color.RED,
+
+                // ii. 大小
+                pixelSize: 10,
+
+                // iii. 轮廓
+                outlineColor: Cesium.Color.WHITE,
+                outlineWidth: 2
+            }
+        });
+        losEntities.push(endMarker);
+        performLineOfSightAnalysis(endPoint);
+        losStartPoint = null; // 重置，准备下一次
+    }
+}
+
+function handleFeaturePick(clickEvent) {
+
+    // 1. 使用 viewer.scene.pick() 拾取点击位置的对象
+    const pickedObject = viewer.scene.pick(clickEvent.position);
+
+    // 2. 检查拾取结果是否存在
+    if (!Cesium.defined(pickedObject)) {
+        console.log("点击到了空白处。");
+        return; // 点击到空白处，直接返回
+    }
+    // --- 3. (核心) 判断拾取到的对象类型，并执行不同逻辑 ---
+    // a. 如果点到的是一个Entity (我们手动创建的点、线、或者GeoJSON加载的面)
+    if (pickedObject.id instanceof Cesium.Entity) {
+        const entity = pickedObject.id;
+        console.log(`拾取到实体(Entity): ${entity.name || entity.id}`);
+
+        // 让Cesium的默认选中行为生效（绿色框 + InfoBox）
+        viewer.selectedEntity = entity;
+        // (可选) 如果你想，你依然可以手动控制相机
+        viewer.flyTo(entity);
+        return; // 处理完毕，返回
+    }
+
+    // b. 如果点到的是一个3D Tileset的Feature (我们的OSM建筑)
+    if (pickedObject instanceof Cesium.Cesium3DTileFeature) {
+        const feature = pickedObject;
+        console.log("拾取到3D建筑要素！");
+
+        // 打印所有属性到控制台
+        const propertyIds = feature.getPropertyIds();
+        console.log("--- 属性详情 ---");
+        const properties = {};
+        propertyIds.forEach(id => {
+            const value = feature.getProperty(id);
+            properties[id] = value;
+            console.log(`${id}:`, value);
+        });
+
+        // 手动更新InfoBox的内容，让它也能显示3D Tile的属性
+        viewer.selectedEntity = new Cesium.Entity({
+            name: `建筑 (ID: ${feature.featureId})`,
+            description: createDescriptionHtml(properties)
+        });
+        return; // 处理完毕，返回
+    }
+}
+
+function createDescriptionHtml(properties) {
+    let html = '<table class="cesium-infoBox-defaultTable"><tbody>';
+    for (const key in properties) {
+        if (Object.prototype.hasOwnProperty.call(properties, key)) {
+            const value = properties[key];
+            html += `<tr><th>${key}</th><td>${value}</td></tr>`;
+        }
+    }
+    html += '</tbody></table>';
+    return html;
+}
+
+
+
+// --- 6. 在组件销毁时，清理所有东西 ---
+onUnmounted(() => {
+  if (losHandler) losHandler.destroy();
+  clearLosAnalysis();
+});
+</script>
+
+<style scoped>
+.analysis-tools {
+  position: absolute;
+  top: 80px; /* 放在下拉框下面 */
+  left: 20px;
+  z-index: 1000;
+}
+</style>
