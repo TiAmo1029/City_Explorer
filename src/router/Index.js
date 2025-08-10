@@ -36,7 +36,7 @@ const routes = [
 const router = createRouter({
     // history 模式：使用 createWebHistory() 来获得干净的URL（如 /about）
     // 这是推荐的模式，依赖HTML5 History API
-    history: createWebHistory(),
+    history: createWebHistory(process.env.BASE_URL),
     // 将我们定义的路由规则数组传递给 router
     routes: routes
 });
