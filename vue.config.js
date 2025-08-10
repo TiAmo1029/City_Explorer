@@ -6,7 +6,7 @@ const path = require('path');
 const cesiumSource = 'node_modules/cesium/Build/Cesium';
 
 module.exports = defineConfig({
-  publicPath: process.env.NODE_ENV === 'production' ? './' : '/',
+  publicPath: process.env.NODE_ENV === 'production' ? '/City_Explorer/' : '/',
 
   configureWebpack: {
     plugins: [
