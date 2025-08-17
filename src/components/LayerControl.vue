@@ -1,67 +1,87 @@
 <template>
     <div class="panel-wrapper" :class="{ collapsed: isCollapsed }">
-        <el-card class="layer-control-panel">
-            <template #header>
-                <div class="card-header">
-                    <span>图层控制</span>
-                    <el-button :icon="isCollapsed ? ArrowRightBold : ArrowLeftBold" circle size="small"
-                        @click="isCollapsed = !isCollapsed" />
-                </div>
-            </template>
+        <!-- 抽屉式开关按钮 -->
+        <div class="toggle-button" @click="isCollapsed = !isCollapsed">
+            <el-icon><el-icon-arrow-right v-if="isCollapsed" /><el-icon-arrow-left v-else /></el-icon>
+        </div>
 
-            <!-- 使用 v-show 来包裹所有内容 -->
-            <div v-show="!isCollapsed">
-                <!-- 【新增】总开关 -->
+        <el-card class="layer-control-panel">
+            <template #header><span>图层控制</span></template>
+            <div v-show="!isCollapsed" class="panel-content">
                 <div class="master-control">
-                    <el-checkbox :model-value="layerStore.provinceLayerVisible"
-                        @change="layerStore.setLayerVisibility('provinces', $event)" label="所有省份" size="large" />
-                    <el-checkbox :model-value="layerStore.cityLayerVisible"
-                        @change="layerStore.setLayerVisibility('cities', $event)" label="所有城市" size="large" />
+                    <el-checkbox v-model="mapStore.provinceLayerVisible" label="所有省份" size="large" />
+                    <el-checkbox v-model="mapStore.cityLayerVisible" label="所有城市" size="large" />
                 </div>
                 <el-divider />
-
-                <!-- 保留你原有的分省份控制，如果需要的话 -->
                 <p class="sub-title">单独控制省份:</p>
                 <div class="province-list">
-                    <div v-for="province in layerStore.provinces" :key="province.id" class="province-item">
-                        <el-checkbox :model-value="province.visible"
-                            @change="layerStore.toggleProvinceVisibility(province.id)">
-                            {{ province.name }}
-                        </el-checkbox>
-                    </div>
+                    <el-checkbox-group v-model="visibleProvinceNames">
+                        <div v-for="province in mapStore.provinces" :key="province.id" class="province-item">
+                            <el-checkbox :label="province.name" />
+                        </div>
+                    </el-checkbox-group>
                 </div>
             </div>
         </el-card>
     </div>
 </template>
 
-
 <script setup>
-import { useMapStore } from '../stores/LayerStore';
-const layerStore = useMapStore();
-import { ref } from 'vue';
-import { ArrowLeftBold, ArrowRightBold } from '@element-plus/icons-vue';
+import { ref, computed } from 'vue';
+import { useMapStore } from '../stores/mapStore';
+import { ArrowLeft as ElIconArrowLeft, ArrowRight as ElIconArrowRight } from '@element-plus/icons-vue';
 
+const mapStore = useMapStore();
 const isCollapsed = ref(false);
+
+const visibleProvinceNames = computed({
+    get() { return mapStore.provinces.filter(p => p.visible).map(p => p.name); },
+    set(newVisibleNames) {
+        mapStore.provinces.forEach(province => {
+            province.visible = newVisibleNames.includes(province.name);
+        });
+    }
+});
 </script>
 
 <style scoped>
-/* 你的原有样式保持不变 */
+/* 抽屉式布局 + 面板样式 (左侧版本) */
 .panel-wrapper {
     position: absolute;
     top: 20px;
-    left: 20px;
+    left: 0;
+    /* 1. 定位在屏幕左侧 */
     z-index: 1000;
+    display: flex;
+    flex-direction: row-reverse;
+    /* 2. (核心) 反转Flex的主轴方向！ */
+    align-items: center;
     transition: transform 0.3s ease-in-out;
 }
 
+/* 3. 当折叠时，向左移出 */
 .panel-wrapper.collapsed {
     transform: translateX(calc(-100% + 40px));
 }
 
+.toggle-button {
+    width: 20px;
+    height: 60px;
+    background-color: #fff;
+    border: 1px solid #dcdfe6;
+    border-left: none;
+    /* 4. 左边框不要，让它和面板无缝连接 */
+    border-radius: 0 6px 6px 0;
+    /* 5. 右边是圆角，左边是直角 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
 .layer-control-panel {
     width: 220px;
-    background-color: rgba(255, 255, 255, 0.9);
 }
 
 .card-header {
@@ -70,26 +90,24 @@ const isCollapsed = ref(false);
     align-items: center;
 }
 
-/* 【新增】一些样式让布局更好看 */
+.panel-content {
+    max-height: calc(100vh - 250px);
+    overflow-y: auto;
+}
+
 .master-control {
     display: flex;
-    justify-content: space-around;
-    padding-bottom: 10px;
+    flex-direction: column;
 }
 
 .sub-title {
     font-size: 12px;
-    color: #909399;
-    margin: 0 0 5px 0;
+    color: #999;
+    margin: 10px 0 5px;
 }
 
-.province-list {
-    max-height: 200px;
-    /* 如果省份太多，可以设置一个最大高度并滚动 */
-    overflow-y: auto;
-}
-
-.province-item {
+.province-list .province-item {
+    display: block;
     margin-bottom: 5px;
 }
 </style>

@@ -2,8 +2,7 @@
     <div class="map-page-container">
         <LayerControl />
         <FeaturePanel />
-
-        <!-- <StatisticsChart /> -->
+        <StatisticsChart />
         <div ref="mapContainer" class="map-container"></div>
     </div>
 </template>
@@ -12,166 +11,179 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { useMapStore } from '../stores/LayerStore.js';
+import { useMapStore } from '../stores/mapStore.js';
 
 import LayerControl from '../components/LayerControl.vue';
 import FeaturePanel from '../components/FeaturePanel.vue';
-//import StatisticsChart from '../components/StatisticsChart.vue'; // 即使注释掉模板，也可以保留导入
+import StatisticsChart from '../components/StatisticsChart.vue';
 
 const mapContainer = ref(null);
 let map = null;
-const layerStore = useMapStore();
+const mapStore = useMapStore();
+// --- 1. (核心) 在组件的顶层作用域，定义一个变量来持有source ---
+let highlightSource = null;
 const MAPTILER_KEY = 'KNvedDoPlLw61gg1Kn4l'; // 替换为你的Key
 mapboxgl.accessToken = MAPTILER_KEY;
 
+// --- 2. 生命周期钩子 ---
 onMounted(() => {
-    if (mapContainer.value) {
-        const styleUrl = `https://api.maptiler.com/maps/streets-v2/style.json?key=${MAPTILER_KEY}`;
-        map = new mapboxgl.Map({
-            container: mapContainer.value,
-            style: styleUrl,
-            center: [104, 35],
-            zoom: 3.5
-        });
-        map.on('load', setupMapAndLayers);
-    }
+    const styleUrl = `https://api.maptiler.com/maps/streets-v2/style.json?key=${MAPTILER_KEY}`;
+    map = new mapboxgl.Map({
+        container: mapContainer.value,
+        style: styleUrl,
+        center: [104, 35],
+        zoom: 3.5
+    });
+    map.on('load', setupMap);
 });
 
 onUnmounted(() => {
-    if (map) {
-        map.remove();
-        map = null;
-    }
+    if (map) map.remove();
 });
 
-async function setupMapAndLayers() {
-    console.log("地图加载，开始设置图层...");
+
+// --- 3. 地图设置总函数 (只在load后执行一次) ---
+async function setupMap() {
     try {
-        // 1. 加载省份数据 (客户端加载)
-        const provinceJsonUrl = `${process.env.BASE_URL}provinces_of_china.json`;
-        console.log("正在从以下URL加载省份数据:", provinceJsonUrl);
-
-        const response = await fetch(provinceJsonUrl); // 可以直接用原生的fetch
+        // a. 加载数据并初始化Store
+        const response = await fetch(`${process.env.BASE_URL}provinces_of_china.json`);
         const provinceGeoJsonData = await response.json();
-
-        const initialProvinces = provinceGeoJsonData.features.map((feature, index) => ({
-            id: feature.properties.name || `province-${index}`,
-            name: feature.properties.name,
-            type: '面',
+        const initialProvinces = provinceGeoJsonData.features.map(f => ({
+            id: f.properties.name,
+            name: f.properties.name,
             visible: true,
-            feature: feature
+            feature: f
         }));
-        layerStore.initializeProvinces(initialProvinces, provinceGeoJsonData);
+        mapStore.initializeProvinces(initialProvinces);
 
-        // 2. 添加省份图层到地图
-        if (!map.getSource('provinces-source')) {
-            map.addSource('provinces-source', {
-                type: 'geojson',
-                data: provinceGeoJsonData,
-                promoteId: 'name'
-            });
-        }
-        if (!map.getLayer('provinces-layer')) {
-            map.addLayer({
-                id: 'provinces-layer',
-                type: 'fill',
-                source: 'provinces-source',
-                paint: {
-                    'fill-color': ['case', ['boolean', ['feature-state', 'selected'], false], '#FFD700', ['boolean', ['feature-state', 'hover'], false], '#FFA500', '#0080ff'],
-                    'fill-opacity': 0.5,
-                    'fill-outline-color': '#000000'
-                }
-            });
-        }
+        // b. 添加所有Source和Layer (只添加一次！)
+        map.addSource('provinces-source', { type: 'geojson', data: provinceGeoJsonData, promoteId: 'name' });
+        map.addLayer({
+            id: 'provinces-layer', type: 'fill', source: 'provinces-source',
+            paint: {
+                'fill-color': ['case', ['boolean', ['feature-state', 'selected'], false], '#FFD700', ['boolean', ['feature-state', 'hover'], false], '#FFA500', '#088'],
+                'fill-opacity': 0.5, 'fill-outline-color': '#fff'
+            }
+        });
 
-        // 3. 添加城市图层 (WMS方式，服务端加载)
-        if (!map.getLayer('cities-layer')) {
-            map.addLayer({
-                id: 'cities-layer',
-                type: 'raster', // WMS返回的是图片，所以类型是栅格
-                source: {
-                    type: 'raster',
-                    tiles: [
-                        // WMS服务的URL模板，请确保GeoServer地址和图层名正确
-                        'http://localhost:8080/geoserver/my_gis_project/wms?service=WMS&version=1.1.0&request=GetMap&layers=my_gis_project%3Agadm41_2&bbox=73.25161743164062%2C17.982297897338867%2C135.0800018310547%2C53.73786926269531&width=768&height=444&srs=EPSG%3A4326&styles=&format=image%2Fpng'
-                    ],
-                    tileSize: 256
-                },
-                paint: { 'raster-opacity': 0.8 },
-                layout: {
-                    // 初始可见性由Store控制，默认为 'none'
-                    visibility: layerStore.cityLayerVisible ? 'visible' : 'none'
-                }
-            });
-        }
+        map.addSource('cities-vt-source', {
+            type: 'vector',
+            tiles: ['http://localhost:8080/geoserver/gwc/service/wmts?layer=my_gis_project:cities_of_china&style=&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/vnd.mapbox-vector-tile&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}']
+        });
+        map.addLayer({
+            id: 'cities-vt-layer', type: 'fill', source: 'cities-vt-source',
+            'source-layer': 'cities_of_china', paint: { 'fill-color': '#f08', 'fill-opacity': 0.4 }
+        });
 
-        // 4. 设置交互和监听器
+        // c. (核心) 添加高亮专用Source和Layer，并立刻获取其实例
+        map.addSource('highlight-source', { type: 'geojson', data: null });
+        map.addLayer({ id: 'highlight-layer', type: 'fill', source: 'highlight-source', paint: { 'fill-color': '#FFFF00', 'fill-opacity': 0.7 } });
+        highlightSource = map.getSource('highlight-source'); // <-- 在这里获取并赋值给顶层变量
+
+        // d. 统一设置交互和监听
         setupInteractions();
         setupWatchers();
 
-    } catch (error) {
-        console.error("设置地图时发生错误:", error);
-    }
+        // e. 初始统计和移动监听
+        updateChartData();
+        map.on('moveend', updateChartData);
+        map.on('zoomend', updateChartData);
+
+    } catch (error) { console.error("地图设置失败:", error); }
 }
 
+// --- 4. 统一的交互处理器 ---
 function setupInteractions() {
-    let hoveredId = null;
-    map.on('click', 'provinces-layer', (e) => {
-        if (e.features.length > 0) {
-            layerStore.setSelectedFeatureId(e.features[0].properties.name);
-        }
-    });
+    let hoveredProvinceId = null;
     map.on('click', (e) => {
-        if (map.queryRenderedFeatures(e.point, { layers: ['provinces-layer'] }).length === 0) {
-            layerStore.setSelectedFeatureId(null);
+        const provinceFeatures = map.queryRenderedFeatures(e.point, { layers: ['provinces-layer'] });
+        const cityFeatures = map.queryRenderedFeatures(e.point, { layers: ['cities-vt-layer'] });
+
+        if (cityFeatures.length > 0) {
+            mapStore.setSelectedFeature('city', cityFeatures[0]);
+        } else if (provinceFeatures.length > 0) {
+            mapStore.setSelectedFeature('province', provinceFeatures[0]);
+        } else {
+            mapStore.setSelectedFeature(null, null);
         }
     });
+
     map.on('mousemove', 'provinces-layer', (e) => {
+        map.getCanvas().style.cursor = 'pointer';
         if (e.features.length > 0) {
-            if (hoveredId !== null) map.setFeatureState({ source: 'provinces-source', id: hoveredId }, { hover: false });
-            hoveredId = e.features[0].properties.name;
-            map.setFeatureState({ source: 'provinces-source', id: hoveredId }, { hover: true });
+            if (hoveredProvinceId) map.setFeatureState({ source: 'provinces-source', id: hoveredProvinceId }, { hover: false });
+            hoveredProvinceId = e.features[0].properties.name;
+            map.setFeatureState({ source: 'provinces-source', id: hoveredProvinceId }, { hover: true });
         }
     });
     map.on('mouseleave', 'provinces-layer', () => {
-        if (hoveredId !== null) map.setFeatureState({ source: 'provinces-source', id: hoveredId }, { hover: false });
-        hoveredId = null;
+        map.getCanvas().style.cursor = '';
+        if (hoveredProvinceId) map.setFeatureState({ source: 'provinces-source', id: hoveredProvinceId }, { hover: false });
+        hoveredProvinceId = null;
     });
 }
 
+// --- 5. 统一的状态侦听器 ---
 function setupWatchers() {
-    // 监听 "所有省份" 总开关
-    watch(() => layerStore.provinceLayerVisible, (isVisible) => {
-        if (map && map.getLayer('provinces-layer')) {
-            map.setLayoutProperty('provinces-layer', 'visibility', isVisible ? 'visible' : 'none');
-        }
-    });
+    let lastSelectedProvinceId = null;
 
-    // 监听 "所有城市" WMS图层总开关
-    watch(() => layerStore.cityLayerVisible, (isVisible) => {
-        if (map && map.getLayer('cities-layer')) {
-            map.setLayoutProperty('cities-layer', 'visibility', isVisible ? 'visible' : 'none');
+    // --- 唯一的、监听选中要素变化的watch ---
+    watch(() => mapStore.selectedFeature, (newSelection) => {
+        // a. 安全检查：确保地图和高亮源都已准备就绪
+        if (!map || !map.isStyleLoaded() || !highlightSource) {
+            console.warn("Watch triggered, but map or highlightSource is not ready.");
+            return;
         }
-    });
 
-    // 监听 provinces 数组内部的变化，用于单独控制省份
-    watch(() => layerStore.provinces, (newProvinces) => {
-        if (map && map.getLayer('provinces-layer')) {
-            const visibleProvinceNames = newProvinces
-                .filter(p => p.visible)
-                .map(p => p.name);
-            map.setFilter('provinces-layer', ['in', 'name', ...visibleProvinceNames]);
+        // b. 清除所有旧的高亮（省份feature-state + 城市高亮图层）
+        if (lastSelectedProvinceId) {
+            map.setFeatureState({ source: 'provinces-source', id: lastSelectedProvinceId }, { selected: false });
+        }
+        lastSelectedProvinceId = null;
+        highlightSource.setData({ type: 'FeatureCollection', features: [] });
+
+        // c. 根据新的选择，设置新的高亮，并触发Action
+        if (newSelection) {
+            const { type, feature } = newSelection;
+
+            if (type === 'province') {
+                // 如果选中的是省份
+                lastSelectedProvinceId = feature.properties.name;
+                map.setFeatureState({ source: 'provinces-source', id: lastSelectedProvinceId }, { selected: true });
+                // 触发获取饼图数据的Action
+                mapStore.fetchCityStatsForProvince(lastSelectedProvinceId);
+            }
+            else if (type === 'city') {
+                // 如果选中的是城市，就更新高亮图层的数据
+                highlightSource.setData(feature);
+                // (可选) 清空省份统计数据，让图表切回仪表盘
+                mapStore.fetchCityStatsForProvince(null);
+            }
+        } else {
+            // d. 如果是清空选择，也确保清空饼图数据
+            mapStore.fetchCityStatsForProvince(null);
         }
     }, { deep: true });
 
-    // 监听选中要素变化，更新高亮状态
-    let lastSelectedId = null;
-    watch(() => layerStore.selectedFeatureId, (newId) => {
-        if (!map || !map.isStyleLoaded()) return;
-        if (lastSelectedId !== null) map.setFeatureState({ source: 'provinces-source', id: lastSelectedId }, { selected: false });
-        if (newId !== null) map.setFeatureState({ source: 'provinces-source', id: newId }, { selected: true });
-        lastSelectedId = newId;
+    // b. 统一处理可见性
+    watch(() => mapStore.provinces, (newProvinces) => {
+        if (!map || !map.getLayer('provinces-layer')) return;
+        const visibleNames = newProvinces.filter(p => p.visible).map(p => p.name);
+        map.setFilter('provinces-layer', ['in', 'name', ...visibleNames]);
+    }, { deep: true });
+
+    watch(() => mapStore.cityLayerVisible, (isVisible) => {
+        if (!map || !map.getLayer('cities-vt-layer')) return;
+        map.setLayoutProperty('cities-vt-layer', 'visibility', isVisible ? 'visible' : 'none');
     });
+}
+
+// --- 6. 更新图表数据的函数 ---
+function updateChartData() {
+    if (!map || !map.isStyleLoaded()) return;
+    const features = map.queryRenderedFeatures({ layers: ['cities-vt-layer'] });
+    const stats = { cityCount: features.length };
+    mapStore.updateMapStats(stats);
 }
 </script>
 

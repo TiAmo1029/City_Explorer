@@ -13,7 +13,7 @@
 <script setup>
 
 import { defineProps } from 'vue';
-import { useLayerStore } from '../stores/LayerStore.js'; // 导入 Pinia store
+import { useLayerStore } from '../stores/mapStore.js'; // 导入 Pinia store
 
 // 接受props用于展示
 defineProps({
