@@ -1,4 +1,4 @@
-# 城市探索者 - 二三维一体化 WebGIS 数据可视化平台
+<img width="2559" height="1340" alt="image" src="https://github.com/user-attachments/assets/b33fc1f7-a1bd-4cd2-ae83-8dbc140de19b" /># 城市探索者 - 二三维一体化 WebGIS 数据可视化平台
 
 **[在线演示 (GitHub Pages)](https://tiamo1029.github.io/City_Explorer/)**
 
@@ -43,8 +43,9 @@
 
 ## 📸 项目截图预览
 
-*(在这里，把你最漂亮的几张2D和3D项目截图放上来！)*
-
+<img width="2557" height="1340" alt="image" src="https://github.com/user-attachments/assets/4aa312bd-d1bc-40b8-a045-1b7892aa72bc" />
+<img width="2559" height="1340" alt="image" src="https://github.com/user-attachments/assets/ad84acbe-6988-457e-aa1d-675487eae1d6" />
+<img width="2559" height="1339" alt="image" src="https://github.com/user-attachments/assets/7115d131-3b31-4e12-b60d-89bbf40a218c" />
+<img width="2558" height="1345" alt="image" src="https://github.com/user-attachments/assets/ef8e659d-d00d-46ed-b547-d322bf21df9f" />
+<img width="2559" height="1346" alt="image" src="https://github.com/user-attachments/assets/fae0b9da-2433-432b-90c6-9ecf40e7f769" />
 ---
-
-去吧！用这份最终的、极其详尽的“产品说明书”，去为你的GitHub仓库，进行一次最华丽的“装修”！
