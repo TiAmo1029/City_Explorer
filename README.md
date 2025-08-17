@@ -1,4 +1,4 @@
-<img width="2559" height="1340" alt="image" src="https://github.com/user-attachments/assets/b33fc1f7-a1bd-4cd2-ae83-8dbc140de19b" /># 城市探索者 - 二三维一体化 WebGIS 数据可视化平台
+# 城市探索者 - 二三维一体化 WebGIS 数据可视化平台
 
 **[在线演示 (GitHub Pages)](https://tiamo1029.github.io/City_Explorer/)**
 
