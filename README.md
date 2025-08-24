@@ -3,14 +3,14 @@
   </a>
 </p>
 
-<h1 align="center">城市探索者 (City Explorer) - 二三维一体化 WebGIS 数据可视化平台</h1>
+<h1 align="center">城市探索者 (City Explorer)</h1>
 
 <p align="center">
   <a href="https://github.com/TiAmo1029/City_Explorer/blob/main/LICENSE"><img src="https://img.shields.io/github/license/TiAmo1029/City_Explorer?style=flat-square" alt="License"></a>
   <a href="https://github.com/TiAmo1029/City_Explorer/stargazers"><img src="https://img.shields.io/github/stars/TiAmo1029/City_Explorer?style=flat-square" alt="Stars"></a>
   <a href="https://github.com/TiAmo1029/City_Explorer/network/members"><img src="https://img.shields.io/github/forks/TiAmo1029/City_Explorer?style=flat-square" alt="Forks"></a>
   <br>
-  <b>一个二三维一体化的现代WebGIS数据可视化平台</b>
+  <b>二三维一体化的现代WebGIS数据可视化平台</b>
   <br><br>
   <a href="https://tiamo1029.github.io/City_Explorer/"><b>在线演示 (GitHub)</b></a>
   ·
