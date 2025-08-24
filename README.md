@@ -1,6 +1,5 @@
 <p align="center">
   <a href=<img width="1049" height="999" alt="image" src="https://github.com/user-attachments/assets/5859b5a5-5503-4c11-a7b3-e8d6f1e5f110" />
- target="_blank">
   </a>
 </p>
 
