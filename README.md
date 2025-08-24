@@ -3,7 +3,7 @@
   </a>
 </p>
 
-<h1 align="center">城市探索者 (City Explorer)</h1>
+<h1 align="center">城市探索者 (City Explorer) - 二三维一体化 WebGIS 数据可视化平台</h1>
 
 <p align="center">
   <a href="https://github.com/TiAmo1029/City_Explorer/blob/main/LICENSE"><img src="https://img.shields.io/github/license/TiAmo1029/City_Explorer?style=flat-square" alt="License"></a>
@@ -29,7 +29,7 @@
 
 *   :world_map: **二三维场景无缝切换**: 基于 **Vue Router** 实现，用户可在2D地图与3D地球之间自由切换。
 *   :satellite: **多源异构数据显示**:
-    *   **2D模式:** 高性能加载**省份(GeoJSON)**和**城市(矢量瓦片)**两级矢量数据。
+    *   **2D模式:** 高性能加载 **省份(GeoJSON)** 和 **城市(矢量瓦片)** 两级矢量数据。
     *   **3D模式:** 集成**全球高精度地形**与**3D Tiles建筑模型**，并加载了**立体化城市面**和**动态飞行轨迹**。
 *   :computer_mouse: **丰富的交互体验**:
     *   **2D:** 省份要素的**点击查询、悬浮/选中高亮**；城市矢量瓦片的点击弹窗；**聚合/聚类**展示海量点数据。
