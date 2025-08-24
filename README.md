@@ -1,7 +1,6 @@
 <p align="center">
-  <a href="https://你的Gitee用户名.gitee.io/city_explorer/" target="_blank">
-    <!-- 你可以把项目最酷炫的截图，上传到仓库里，然后在这里引用它的链接 -->
-    <img src="https://path/to/your/preview.png" width="180" alt="Project Logo">
+  <a href=<img width="1049" height="999" alt="image" src="https://github.com/user-attachments/assets/5859b5a5-5503-4c11-a7b3-e8d6f1e5f110" />
+ target="_blank">
   </a>
 </p>
 
@@ -14,8 +13,6 @@
   <br>
   <b>一个二三维一体化的现代WebGIS数据可视化平台</b>
   <br><br>
-  <a href="https://你的Gitee用户名.gitee.io/city_explorer/"><b>在线演示 (国内推荐)</b></a>
-  ·
   <a href="https://tiamo1029.github.io/City_Explorer/"><b>在线演示 (GitHub)</b></a>
   ·
   <a href="https://github.com/TiAmo1029/City_Explorer/issues">报告Bug</a>
