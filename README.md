@@ -56,6 +56,28 @@
 | **工程化** | **Git / npm / Vue CLI** | 进行项目**版本控制**、**依赖管理**和**自动化构建**。 |
 | | **Docker** | (在【Geo-Engine】项目中)将后端应用**容器化**，实现了一键化、跨平台的快速部署。 |
 
+## 🚀 技术栈深度解析
+
+*(这部分，我们可以用一个更酷的“徽章墙”来展示！你可以去 shields.io 网站生成这些徽章)*
+
+![Vue.js](https://img.shields.io/badge/Vue.js-3.x-4FC08D?style=for-the-badge&logo=vue.js) ![Pinia](https://img.shields.io/badge/Pinia-2.x-FFD700?style=for-the-badge) ![Mapbox GL JS](https://img.shields.io/badge/Mapbox_GL_JS-2.x-1E62F0?style=for-the-badge) ![Cesium JS](https://img.shields.io/badge/Cesium_JS-1.x-0096FF?style=for-the-badge) ![Node.js](https://img.shields.io/badge/Node.js-18.x-339933?style=for-the-badge&logo=node.js) ![Python](https://img.shields.io/badge/Python-3.10-3776AB?style=for-the-badge&logo=python) ![PostGIS](https://img.shields.io/badge/PostGIS-3.x-2F73BF?style=for-the-badge) ![GeoServer](https://img.shields.io/badge/GeoServer-2.x-4DB848?style=for-the-badge) ![Docker](https://img.shields.io/badge/Docker-20.x-2496ED?style=for-the-badge&logo=docker)
+
+## 💡 关键技术决策与思考 （Key technical decisions and considerations）
+
+#### 1. 2D城市图层渲染方案演进
+
+在项目中，我针对“海量城市面数据”的渲染，进行了三次技术方案的迭代与权衡：
+*   **v1.0 (WFS方案):** 最初采用GeoServer发布的WFS服务加载全量GeoJSON。**优点**是交互灵活，**缺点**是数据量大时，前端性能瓶颈极其明显。
+*   **v2.0 (WMS方案):** 切换为WMS服务，在服务器端渲染为图片瓦片。**优点**是性能极高，**缺点**是完全牺牲了前端的交互性（无法点击、无法获取属性）。
+*   **v3.0 (矢量瓦片方案 - 最终选择):** **将数据上传至MapTiler Cloud**，发布为高性能的矢量瓦片服务。此方案完美地**兼顾了高性能与前端交互性**，是现代WebGIS处理大规模矢量数据的最佳实践。
+
+#### 2. 3D动态轨迹模拟方案对比
+
+为了实现飞行轨迹模拟，我研究并实践了两种主流方案：
+*   **`CZML`方案:** 通过后端API生成符合CZML规范的“时空剧本”JSON。**优点**是功能强大，能描述极其复杂的动态场景。**缺点**是对后端数据处理要求高，且数据包相对较大。
+*   **`SampledPositionProperty`方案 (最终选择):** 在前端，通过一个简单的坐标点数组，利用Cesium的`SampledPositionProperty`进行**客户端实时插值**。**优点**是后端接口极简（只需提供坐标点），前端实现灵活，性能优异。**这体现了将“数据”与“表现”解耦的设计思想。**
+
+
 ## 🤔 我的思考与成长 (My Reflection & Growth)
 
 这个项目对我而言，远不止是技术的堆砌，更是一次**从“学生思维”到“工程师思维”**的深刻蜕变。
