@@ -4,11 +4,15 @@ import axios from 'axios';
 
 export const useMapStore = defineStore('mapStore', () => {
     const provinces = ref([]);
-    const cityLayerVisible = ref(false);
+    // const cityLayerVisible = ref(false);
     const selectedFeature = ref(null);
     const mapStats = ref({ cityCount: 0 });
     const selectedProvinceCitiesStats = ref(null);
     const isLoadingStats = ref(false);
+
+    // --- (核心) 新增一个字符串来管理“城市图层”的显示模式 ---
+    const cityDisplayMode = ref('cluster'); // 初始模式为'面'
+    // 可选值: 'none' (不显示), 'fill' (显示面), 'cluster' (显示聚合点)
 
     const selectedFeatureProperties = computed(() => {
         return selectedFeature.value ? selectedFeature.value.feature.properties : null;
@@ -22,9 +26,14 @@ export const useMapStore = defineStore('mapStore', () => {
     function initializeProvinces(data) {
         provinces.value = data;
     }
-
-    function toggleCityLayerVisibility() {
-        cityLayerVisible.value = !cityLayerVisible.value;
+    /*
+        function toggleCityLayerVisibility() {
+            cityLayerVisible.value = !cityLayerVisible.value;
+        }
+            */
+    // --- (核心) 新增一个Action来改变城市显示模式 ---
+    function setCityDisplayMode(mode) {
+        cityDisplayMode.value = mode;
     }
 
     function setSelectedFeature(type, feature) {
@@ -80,10 +89,10 @@ export const useMapStore = defineStore('mapStore', () => {
     }
 
     return {
-        provinces, cityLayerVisible, selectedFeature, mapStats,
+        provinces, cityDisplayMode, selectedFeature, mapStats,
         selectedProvinceCitiesStats, isLoadingStats, selectedFeatureProperties,
         provinceLayerVisible,
-        initializeProvinces, toggleCityLayerVisibility,
+        initializeProvinces, setCityDisplayMode,
         setSelectedFeature, updateMapStats, fetchCityStatsForProvince
     };
 });

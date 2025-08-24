@@ -47,8 +47,13 @@ onUnmounted(() => {
 async function setupMap() {
     try {
         // a. 加载数据并初始化Store
-        const response = await fetch(`${process.env.BASE_URL}provinces_of_china.json`);
-        const provinceGeoJsonData = await response.json();
+        // --- 1. (核心) 并发加载所有需要的【静态】数据文件 ---
+        const [provinceResponse, cityPointsResponse] = await Promise.all([
+            fetch(`${process.env.BASE_URL}provinces_of_china.json`),
+            fetch(`${process.env.BASE_URL}china_cities_points.json`)
+        ]);
+        const provinceGeoJsonData = await provinceResponse.json();
+        const cityPointsGeoJson = await cityPointsResponse.json();
         const initialProvinces = provinceGeoJsonData.features.map(f => ({
             id: f.properties.name,
             name: f.properties.name,
@@ -67,24 +72,45 @@ async function setupMap() {
             }
         });
 
-        map.addSource('cities-vt-source', {
-            type: 'vector',
-            tiles: ['https://api.maptiler.com/tiles/0198dc07-9e93-7368-9269-00c754ca38a4/{z}/{x}/{y}.pbf?key=KNvedDoPlLw61gg1Kn4l']
-        });
-        map.addLayer({
-            id: 'cities-vt-layer', type: 'fill', source: 'cities-vt-source',
-            'source-layer': 'cities_for_maptiler', paint: { 'fill-color': '#f08', 'fill-opacity': 0.4 }
-        });
+        // --- 2. (核心修复) 使用正确的`url`属性，并【检查真实的source-layer】 ---
+        const tileJsonUrl = `https://api.maptiler.com/tiles/0198dc07-9e93-7368-9269-00c754ca38a4/tiles.json?key=KNvedDoPlLw61gg1Kn4l`;
+
+        // --- 2a. (终极侦察) 动态地获取真实的source-layer名称 ---
+        const tileJsonResponse = await axios.get(tileJsonUrl);
+        const realSourceLayerName = tileJsonResponse.data.vector_layers[0].id;
+        console.log("侦察到的真实Source Layer名称是:", realSourceLayerName);
+
+        // --- 2. (核心修复) 使用正确的`url`属性来加载矢量瓦片 ---
+        if (!map.getSource('cities-vt-source')) {
+            map.addSource('cities-vt-source', {
+                'type': 'vector',
+                'url': tileJsonUrl
+            });
+        }
+        if (!map.getLayer('cities-vt-layer')) {
+            map.addLayer({
+                'id': 'cities-vt-layer',
+                'type': 'fill',
+                'source': 'cities-vt-source',
+                'source-layer': realSourceLayerName,
+                'layout': { 'visibility': mapStore.cityLayerVisible ? 'visible' : 'none' },
+                'paint': {
+                    'fill-color': '#f08',
+                    'fill-opacity': 0.4
+                }
+            });
+        }
 
         // c. (核心) 添加高亮专用Source和Layer，并立刻获取其实例
         map.addSource('highlight-source', { type: 'geojson', data: null });
         map.addLayer({ id: 'highlight-layer', type: 'fill', source: 'highlight-source', paint: { 'fill-color': '#FFFF00', 'fill-opacity': 0.7 } });
         highlightSource = map.getSource('highlight-source'); // <-- 在这里获取并赋值给顶层变量
-
-        // --- 1. (核心) 调用我们自己的后端API，获取城市质心点数据 ---
-        const cityCentroidsUrl = 'http://localhost:3000/api/cities-centroids';
-        const cityPointsResponse = await axios.get(cityCentroidsUrl);
-        const cityPointsGeoJson = cityPointsResponse.data;
+        /*
+                // --- 1. (核心) 调用我们自己的后端API，获取城市质心点数据 ---
+                const cityCentroidsUrl = 'http://localhost:3000/api/cities-centroids';
+                const cityPointsResponse = await axios.get(cityCentroidsUrl);
+                const cityPointsGeoJson = cityPointsResponse.data;
+                */
 
         // --- 2. (核心) 添加一个【可聚合】的数据源 ---
         if (!map.getSource('city-points-source')) {
@@ -270,9 +296,19 @@ function setupWatchers() {
         map.setFilter('provinces-layer', ['in', 'name', ...visibleNames]);
     }, { deep: true });
 
-    watch(() => mapStore.cityLayerVisible, (isVisible) => {
-        if (!map || !map.getLayer('cities-vt-layer')) return;
-        map.setLayoutProperty('cities-vt-layer', 'visibility', isVisible ? 'visible' : 'none');
+    // --- (核心) 智能的城市图层模式监听器 ---
+    watch(() => mapStore.cityDisplayMode, (newMode) => {
+        if (!map) return;
+
+        // 根据新模式，智能地切换图层可见性
+        map.setLayoutProperty('cities-vt-layer', 'visibility', newMode === 'fill' ? 'visible' : 'none');
+
+        // 同时控制三个聚合图层
+        ['clusters-layer', 'cluster-count-layer', 'unclustered-point-layer'].forEach(layerId => {
+            if (map.getLayer(layerId)) {
+                map.setLayoutProperty(layerId, 'visibility', newMode === 'cluster' ? 'visible' : 'none');
+            }
+        });
     });
 }
 

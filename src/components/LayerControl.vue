@@ -10,16 +10,26 @@
             <div v-show="!isCollapsed" class="panel-content">
                 <div class="master-control">
                     <el-checkbox v-model="mapStore.provinceLayerVisible" label="所有省份" size="large" />
-                    <el-checkbox v-model="mapStore.cityLayerVisible" label="所有城市" size="large" />
-                </div>
-                <el-divider />
-                <p class="sub-title">单独控制省份:</p>
-                <div class="province-list">
-                    <el-checkbox-group v-model="visibleProvinceNames">
-                        <div v-for="province in mapStore.provinces" :key="province.id" class="province-item">
-                            <el-checkbox :label="province.name" />
-                        </div>
-                    </el-checkbox-group>
+                    <el-divider />
+
+                    <!-- (核心) 城市图层模式选择器 -->
+                    <p class="sub-title">城市图层显示模式:</p>
+                    <el-radio-group :model-value="mapStore.cityDisplayMode"
+                        @update:modelValue="mapStore.setCityDisplayMode" size="small">
+                        <el-radio-button label="none">不显示</el-radio-button>
+                        <el-radio-button label="fill">显示为面</el-radio-button>
+                        <el-radio-button label="cluster">显示为点(聚合)</el-radio-button>
+                    </el-radio-group>
+
+                    <el-divider />
+                    <p class="sub-title">单独控制省份:</p>
+                    <div class="province-list">
+                        <el-checkbox-group v-model="visibleProvinceNames">
+                            <div v-for="province in mapStore.provinces" :key="province.id" class="province-item">
+                                <el-checkbox :label="province.name" />
+                            </div>
+                        </el-checkbox-group>
+                    </div>
                 </div>
             </div>
         </el-card>
