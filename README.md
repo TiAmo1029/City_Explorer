@@ -83,6 +83,18 @@
 
 4.  在浏览器中打开 `http://localhost:8080` (或终端提示的地址)。
 
+## 📸 项目截图预览
+
+<img width="2558" height="1344" alt="image" src="https://github.com/user-attachments/assets/a1832e39-1410-4dba-8965-59bfe04d53c7" />
+<img width="2559" height="1339" alt="image" src="https://github.com/user-attachments/assets/d82f9f2f-484e-426f-a968-3eddae28c94b" />
+<img width="2559" height="1344" alt="image" src="https://github.com/user-attachments/assets/6c2ef520-63fc-4c17-b724-7b16b03ba015" />
+<img width="2559" height="1340" alt="image" src="https://github.com/user-attachments/assets/6f13aa6b-3694-4807-bddc-61ee43bbd443" />
+<img width="2559" height="1346" alt="image" src="https://github.com/user-attachments/assets/aadf6efe-2abe-42ae-b738-25e5394a433e" />
+<img width="2559" height="1340" alt="image" src="https://github.com/user-attachments/assets/ad84acbe-6988-457e-aa1d-675487eae1d6" />
+<img width="2559" height="1339" alt="image" src="https://github.com/user-attachments/assets/7115d131-3b31-4e12-b60d-89bbf40a218c" />
+<img width="2558" height="1345" alt="image" src="https://github.com/user-attachments/assets/ef8e659d-d00d-46ed-b547-d322bf21df9f" />
+<img width="2559" height="1346" alt="image" src="https://github.com/user-attachments/assets/fae0b9da-2433-432b-90c6-9ecf40e7f769" />
+
 ---
 
 *作者：秦亚会*
