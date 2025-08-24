@@ -40,6 +40,8 @@
 
 ## 🚀 技术栈深度解析 (Architecture & Tech Deep Dive)
 
+![Vue.js](https://img.shields.io/badge/Vue.js-3.x-4FC08D?style=for-the-badge&logo=vue.js) ![Pinia](https://img.shields.io/badge/Pinia-2.x-FFD700?style=for-the-badge) ![Mapbox GL JS](https://img.shields.io/badge/Mapbox_GL_JS-2.x-1E62F0?style=for-the-badge) ![Cesium JS](https://img.shields.io/badge/Cesium_JS-1.x-0096FF?style=for-the-badge) ![Node.js](https://img.shields.io/badge/Node.js-18.x-339933?style=for-the-badge&logo=node.js) ![Python](https://img.shields.io/badge/Python-3.10-3776AB?style=for-the-badge&logo=python) ![PostGIS](https://img.shields.io/badge/PostGIS-3.x-2F73BF?style=for-the-badge) ![GeoServer](https://img.shields.io/badge/GeoServer-2.x-4DB848?style=for-the-badge) ![Docker](https://img.shields.io/badge/Docker-20.x-2496ED?style=for-the-badge&logo=docker)
+
 | 分类 | 技术 | 在项目中的应用 |
 | :--- | :--- | :--- |
 | **前端核心** | **Vue 3 (Composition API)** | 构建了整个应用的**组件化架构**，实现了逻辑的清晰解耦与高效复用。 |
@@ -55,12 +57,6 @@
 | **数据库** | **PostgreSQL / PostGIS** | 作为核心**空间数据库**，存储所有GIS数据，并利用其强大的**空间SQL函数**进行后端计算。 |
 | **工程化** | **Git / npm / Vue CLI** | 进行项目**版本控制**、**依赖管理**和**自动化构建**。 |
 | | **Docker** | (在【Geo-Engine】项目中)将后端应用**容器化**，实现了一键化、跨平台的快速部署。 |
-
-## 🚀 技术栈深度解析
-
-*(这部分，我们可以用一个更酷的“徽章墙”来展示！你可以去 shields.io 网站生成这些徽章)*
-
-![Vue.js](https://img.shields.io/badge/Vue.js-3.x-4FC08D?style=for-the-badge&logo=vue.js) ![Pinia](https://img.shields.io/badge/Pinia-2.x-FFD700?style=for-the-badge) ![Mapbox GL JS](https://img.shields.io/badge/Mapbox_GL_JS-2.x-1E62F0?style=for-the-badge) ![Cesium JS](https://img.shields.io/badge/Cesium_JS-1.x-0096FF?style=for-the-badge) ![Node.js](https://img.shields.io/badge/Node.js-18.x-339933?style=for-the-badge&logo=node.js) ![Python](https://img.shields.io/badge/Python-3.10-3776AB?style=for-the-badge&logo=python) ![PostGIS](https://img.shields.io/badge/PostGIS-3.x-2F73BF?style=for-the-badge) ![GeoServer](https://img.shields.io/badge/GeoServer-2.x-4DB848?style=for-the-badge) ![Docker](https://img.shields.io/badge/Docker-20.x-2496ED?style=for-the-badge&logo=docker)
 
 ## 💡 关键技术决策与思考 （Key technical decisions and considerations）
 
