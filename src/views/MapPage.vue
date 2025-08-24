@@ -9,6 +9,7 @@
 
 <script setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue';
+import axios from 'axios';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { useMapStore } from '../stores/mapStore.js';
@@ -68,17 +69,112 @@ async function setupMap() {
 
         map.addSource('cities-vt-source', {
             type: 'vector',
-            tiles: ['http://localhost:8080/geoserver/gwc/service/wmts?layer=my_gis_project:cities_of_china&style=&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/vnd.mapbox-vector-tile&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}']
+            tiles: ['https://api.maptiler.com/tiles/0198dc07-9e93-7368-9269-00c754ca38a4/{z}/{x}/{y}.pbf?key=KNvedDoPlLw61gg1Kn4l']
         });
         map.addLayer({
             id: 'cities-vt-layer', type: 'fill', source: 'cities-vt-source',
-            'source-layer': 'cities_of_china', paint: { 'fill-color': '#f08', 'fill-opacity': 0.4 }
+            'source-layer': 'cities_for_maptiler', paint: { 'fill-color': '#f08', 'fill-opacity': 0.4 }
         });
 
         // c. (核心) 添加高亮专用Source和Layer，并立刻获取其实例
         map.addSource('highlight-source', { type: 'geojson', data: null });
         map.addLayer({ id: 'highlight-layer', type: 'fill', source: 'highlight-source', paint: { 'fill-color': '#FFFF00', 'fill-opacity': 0.7 } });
         highlightSource = map.getSource('highlight-source'); // <-- 在这里获取并赋值给顶层变量
+
+        // --- 1. (核心) 调用我们自己的后端API，获取城市质心点数据 ---
+        const cityCentroidsUrl = 'http://localhost:3000/api/cities-centroids';
+        const cityPointsResponse = await axios.get(cityCentroidsUrl);
+        const cityPointsGeoJson = cityPointsResponse.data;
+
+        // --- 2. (核心) 添加一个【可聚合】的数据源 ---
+        if (!map.getSource('city-points-source')) {
+            map.addSource('city-points-source', {
+                type: 'geojson',
+                data: cityPointsGeoJson,
+                cluster: true, // <-- 开启聚合功能的“总开关”！
+                clusterMaxZoom: 14, // 在哪个缩放级别停止聚合
+                clusterRadius: 50 // 聚合点的半径（像素）
+            });
+        }
+
+        // --- 3. (核心) 创建三个独立的图层，来渲染这个数据源 ---
+
+        // a. 创建【聚合点簇】图层 (带数字的圆圈)
+        if (!map.getLayer('clusters-layer')) {
+            map.addLayer({
+                id: 'clusters-layer',
+                type: 'circle',
+                source: 'city-points-source',
+                filter: ['has', 'point_count'], // 只渲染那些“有point_count属性”的要素，也就是聚合点
+                paint: {
+                    // 根据点簇内的数量，分级显示不同颜色
+                    'circle-color': [
+                        'step',
+                        ['get', 'point_count'],
+                        '#51bbd6', 100, // 数量 < 100 时，用蓝色
+                        '#f1f075', 750, // 100 <= 数量 < 750 时，用黄色
+                        '#f28cb1'  // 数量 >= 750 时，用粉色
+                    ],
+                    'circle-radius': [
+                        'step',
+                        ['get', 'point_count'],
+                        20, 100, // 数量 < 100 时，半径20px
+                        30, 750, // 100 <= 数量 < 750 时，半径30px
+                        40      // 数量 >= 750 时，半径40px
+                    ]
+                }
+            });
+        }
+
+        // b. 创建【聚合点簇内的数字】图层
+        if (!map.getLayer('cluster-count-layer')) {
+            map.addLayer({
+                id: 'cluster-count-layer',
+                type: 'symbol',
+                source: 'city-points-source',
+                filter: ['has', 'point_count'],
+                layout: {
+                    'text-field': '{point_count_abbreviated}', // 显示被聚合点的数量（自动缩写 K/M）
+                    'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Bold'],
+                    'text-size': 12
+                }
+            });
+        }
+
+        // c. 创建【未被聚合的单个点】图层
+        if (!map.getLayer('unclustered-point-layer')) {
+            map.addLayer({
+                id: 'unclustered-point-layer',
+                type: 'circle',
+                source: 'city-points-source',
+                filter: ['!', ['has', 'point_count']], // 只渲染那些“没有point_count属性”的要素
+                paint: {
+                    'circle-color': '#11b4da',
+                    'circle-radius': 6,
+                    'circle-stroke-width': 1,
+                    'circle-stroke-color': '#fff'
+                }
+            });
+        }
+
+        // --- 4. (核心) 为聚合点簇添加交互 ---
+        map.on('click', 'clusters-layer', (e) => {
+            const features = map.queryRenderedFeatures(e.point, { layers: ['clusters-layer'] });
+            const clusterId = features[0].properties.cluster_id;
+
+            // 获取这个点簇的扩展范围(zoom extent)
+            map.getSource('city-points-source').getClusterExpansionZoom(
+                clusterId,
+                (err, zoom) => {
+                    if (err) return;
+                    // 让地图平滑地放大到可以“炸开”这个点簇的级别
+                    map.easeTo({
+                        center: features[0].geometry.coordinates,
+                        zoom: zoom
+                    });
+                }
+            );
+        });
 
         // d. 统一设置交互和监听
         setupInteractions();
@@ -88,6 +184,8 @@ async function setupMap() {
         updateChartData();
         map.on('moveend', updateChartData);
         map.on('zoomend', updateChartData);
+        map.on('mouseenter', 'clusters-layer', () => { map.getCanvas().style.cursor = 'pointer'; });
+        map.on('mouseleave', 'clusters-layer', () => { map.getCanvas().style.cursor = ''; });
 
     } catch (error) { console.error("地图设置失败:", error); }
 }

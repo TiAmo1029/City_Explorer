@@ -1,0 +1,1 @@
+http://localhost:8080/geoserver/gwc/service/wmts?layer=my_gis_project:cities_of_china&style=&tilematrixset=EPSG:900913&Service=WMTS&Request=GetTile&Version=1.0.0&Format=application/vnd.mapbox-vector-tile&TileMatrix=EPSG:900913:{z}&TileCol={x}&TileRow={y}
